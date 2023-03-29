@@ -35,8 +35,8 @@ async function delay(x) {
 
 	let { access_token } = await auth(config);
 
-	let inputURL = `https://${STORAGE_HOST}.blob.core.windows.net/jedi/xmas.jpg?${STORAGE_SAS}`;
-	let outputURL = `https://${STORAGE_HOST}.blob.core.windows.net/jedi/xmas2.jpg?${STORAGE_SAS}`;
+	let inputURL = `https://${STORAGE_HOST}.blob.core.windows.net/jedi/oldcan.jpg?${STORAGE_SAS}`;
+	let outputURL = `https://${STORAGE_HOST}.blob.core.windows.net/jedi/oldcan-modified.jpg?${STORAGE_SAS}`;
 
 	let data = {
 		"input":{
@@ -45,10 +45,7 @@ async function delay(x) {
 		},
 		"output": {
 			"storage":"azure",
-			"href":outputURL, 
-			"mask":{
-				"format":"soft"
-			}
+			"href":outputURL
 		}
 	}
 
@@ -62,22 +59,25 @@ async function delay(x) {
 	});
 
 	let result = await resp.json();
-	//console.log(result);
+	console.log(result);
 
 	let status = 'running';
+	let jobResult;
 	while(status === 'running' || status === 'pending' || status === 'starting') {
 		console.log('delaying while checking');
 		await delay(5000);
 
-		let resp2 = await fetch(result['_links']['self']['href'], {
+		let jobReq = await fetch(result['_links']['self']['href'], {
 			headers: {
 				'Authorization':`Bearer ${access_token}`,
 				'x-api-key': CLIENT_ID
 			}
 		})
-		let result2 = await resp2.json();
-		if(result2['status'] !== 'running') console.log(result2);
-		status = result2['status'];
+		
+		jobResult = await jobReq.json();
+		
+		status = jobResult['status'];
 	}
 
+	console.log('Final result', jobResult);
 })();
