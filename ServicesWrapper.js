@@ -87,6 +87,19 @@ class ServicesWrapper {
 
 	}
 
+	async pollJob(url) {
+		let doneStatuses = ['running', 'pending'];
+
+		let status = 'running';
+		while(doneStatuses.indexOf(status) !== -1) {
+			let currentStatus = await this.getJob(url);
+			if(doneStatuses.indexOf(currentStatus.status) !== -1) {
+				// todo: make this configurable perhaps?
+				await this.delay(1000);
+			} else return currentStatus;
+		}
+	}
+
 	/*
 	options (with defaults):
 		optimize: 'performance'

@@ -30,9 +30,8 @@ async function getSignedUploadUrl(path) {
 	let uploadURL = await getSignedUploadUrl('output/cats_nobg.jpg');
 	console.log('Creating BG job');
 	let removeBGJob = await psAPI.removeBackground(inputURL, uploadURL);
-	console.log('Waiting a bit before we check...');
-	await psAPI.delay(5000);
-	let jobStatus = await psAPI.getJob(removeBGJob);
-	console.log(jobStatus);
+
+	let status = await psAPI.pollJob(removeBGJob);
+	console.log(status);
 
 })();
