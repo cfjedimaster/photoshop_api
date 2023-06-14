@@ -58,18 +58,31 @@ class ServicesWrapper {
 
 	}
 
-	// Not really useful unless you just want to quickly validate your auth
-	async hello() {
-		let access_token = await this.accessToken;
+	// Note in the docs this is called Get layer info
+	// Currently does not support options/thumbnails
+	async getDocumentManifest(inputURL) {
+		let token = await this.accessToken;
 
-		let resp = await fetch('https://image.adobe.io/pie/psdService/hello', {
+		let body = {
+			inputs: [ this.#createFileRef(inputURL) ]
+		}
+
+		body = JSON.stringify(body);
+
+		let req = await fetch(REST_API+'pie/psdService/documentManifest', {
+			method:'post',
 			headers: {
-				'Authorization':`Bearer ${access_token}`,
-				'x-api-key': this.creds.clientId
-			}
+				'x-api-key':this.creds.clientId,
+				'Authorization':`Bearer ${token}`,
+				'Content-Type':'application/json'
+			},
+			body: body
 		});
 
-		return await resp.text();
+		let result = await req.json();
+		// todo: better error handling
+		if(result.code) throw new Error(`Error in call: ${result.reason[0].message}`);
+		return result._links.self.href;
 	}
 
 	async getJob(url) {
@@ -87,13 +100,36 @@ class ServicesWrapper {
 
 	}
 
+	// Not really useful unless you just want to quickly validate your auth
+	async hello() {
+		let access_token = await this.accessToken;
+
+		let resp = await fetch('https://image.adobe.io/pie/psdService/hello', {
+			headers: {
+				'Authorization':`Bearer ${access_token}`,
+				'x-api-key': this.creds.clientId
+			}
+		});
+
+		return await resp.text();
+	}
+
+
 	async pollJob(url) {
 		let doneStatuses = ['running', 'pending'];
 
 		let status = 'running';
 		while(doneStatuses.indexOf(status) !== -1) {
 			let currentStatus = await this.getJob(url);
-			if(doneStatuses.indexOf(currentStatus.status) !== -1) {
+			let thisStatus;
+			if(currentStatus.status) thisStatus = currentStatus.status;
+			if(currentStatus.outputs && currentStatus.outputs[0].status) thisStatus = currentStatus.outputs[0].status;
+			/*
+			So today I discovered that there are 4 different poll job APIs covered in the greater
+			bucket of PS APIs. I'm beginning my work to try to get this to work for all, but may 
+			kill off this idea completely.
+			*/
+			if(doneStatuses.indexOf(thisStatus) !== -1) {
 				// todo: make this configurable perhaps?
 				await this.delay(1000);
 			} else return currentStatus;

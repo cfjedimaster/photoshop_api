@@ -26,12 +26,24 @@ async function getSignedUploadUrl(path) {
 	//let test = await psAPI.hello();
 	//console.log('hello test', test);
 
-	let inputURL = await getSignedDownloadUrl('input/cats.jpg');
-	let uploadURL = await getSignedUploadUrl('output/cats_nobg.jpg');
+	let inputURL, uploadURL, status;
+
+	//TEST CASE 1 - remove BG
+	inputURL = await getSignedDownloadUrl('input/cats.jpg');
+	uploadURL = await getSignedUploadUrl('output/cats_nobg.jpg');
 	console.log('Creating BG job');
 	let removeBGJob = await psAPI.removeBackground(inputURL, uploadURL);
 
-	let status = await psAPI.pollJob(removeBGJob);
+	status = await psAPI.pollJob(removeBGJob);
 	console.log(status);
+	
+	//TEST CASE 2 - get document manifest on a psd
+	inputURL = await getSignedDownloadUrl('input/paperclips.psd');
+	let maniJob = await psAPI.getDocumentManifest(inputURL);
+	console.log(maniJob);
+
+	status = await psAPI.pollJob(maniJob);
+	console.log(JSON.stringify(status,null,'\t'));
+	
 
 })();
